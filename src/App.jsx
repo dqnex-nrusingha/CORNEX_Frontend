@@ -71,9 +71,12 @@ function App() {
           <Route path="sales/invoices" element={<InvoicesPage />} />
           <Route path="sales/invoices/new" element={<CreateInvoicePage />} />
           <Route path="sales/invoices/:id" element={<InvoiceDetailPage />} />
-          <Route path="vendors" element={<VendorsPage />} />
-          <Route path="vendors/new" element={<CreateVendorPage />} />
-          <Route path="vendors/:id" element={<VendorDetailsPage />} />
+          // =====================================================
+          // VENDOR ROUTES
+          // =====================================================
+          <Route path="vendors" element={<VendorsPage />}/>
+          <Route path="vendors/new" element={<CreateVendorPage />}/>
+          <Route path="vendors/:vendorId" element={<VendorDetailsPage />}/>
           <Route path="purchase" element={<PurchasePage />} />
           <Route path="purchase/new" element={<CreatePurchaseOrderPage />} />
           <Route path="purchase/order/:id" element={<PurchaseOrderDetailPage />} />

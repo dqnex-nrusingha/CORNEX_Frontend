@@ -1,723 +1,1803 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Search, Plus, MoreHorizontal, Mail, ExternalLink, ChevronUp, ChevronDown, Edit, X, Calendar, Download } from 'lucide-react';
+import React, {
+    useEffect,
+    useState
+} from 'react';
+
+import {
+    useNavigate,
+    useParams
+} from 'react-router-dom';
+
+import {
+    ChevronDown,
+    Plus,
+    MoreHorizontal,
+    Search
+} from 'lucide-react';
+
+
+// =====================================================
+// COMPONENTS
+// =====================================================
+
+import VendorHeader
+    from "../../components/vendors/VendorHeader";
+
+import VendorSummary
+    from "../../components/vendors/VendorSummary";
+
+import VendorOverview
+    from "../../components/vendors/VendorOverview";
+
+import VendorCommercialTerms
+    from "../../components/vendors/VendorCommercialTerms";
+
+import ReelSpecifications
+    from "../../components/vendors/ReelSpecifications";
+
+import PurchaseOrderHistory
+    from "../../components/vendors/PurchaseOrderHistory";
+
+
+// =====================================================
+// SERVICES
+// =====================================================
+
+import {
+    getVendorDetails,
+    getVendorReelSpecifications,
+    getVendorOrderHistory
+} from "../../services/vendors/vendorDetailsApi";
+
+import {
+    getVendors
+} from "../../services/vendors/vendorlistApi";
+
+
+/*
+ * =====================================================
+ * VENDOR DETAILS PAGE
+ * =====================================================
+ *
+ * This page intentionally follows the same page architecture
+ * as CustomerDetailsPage.jsx.
+ *
+ * Layout:
+ *
+ *   LEFT
+ *     Vendor list / search
+ *
+ *   RIGHT
+ *     VendorHeader
+ *     VendorSummary
+ *     Tabs
+ *       - Overview
+ *       - Commercial Terms
+ *       - Reel Specifications
+ *       - Purchase Order History
+ *
+ * Important Vendor-specific mapping:
+ *
+ *   Customer -> Vendor
+ *   Box Specifications -> Reel Specifications
+ *   Order History -> Purchase Order History
+ *
+ * The Vendor backend returns the vendor master together with
+ * addresses, contacts, banks, documents, reel specifications,
+ * purchase-order history and summary.
+ */
 
 const VendorDetailsPage = () => {
-  const navigate = useNavigate();
-  const [addressExpanded, setAddressExpanded] = useState(true);
-  const [activeTab, setActiveTab] = useState('Overview');
-  const [selectedBox, setSelectedBox] = useState(null);
 
-  return (
-    <div className="flex h-full bg-[#f4f7f9] p-1.5 gap-1.5 overflow-hidden">
+    const navigate =
+        useNavigate();
 
-      {/* ── Left Sidebar (List) ── */}
-      <div className="w-full lg:w-[260px] shrink-0 flex flex-col bg-white rounded-[20px] shadow-sm border border-gray-100 overflow-hidden">
-        <div className="p-3 pb-2">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center space-x-1 cursor-pointer">
-              <h2 className="text-[16px] font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#ff3b30] via-[#b82db8] to-[#5a67d8]">All Vendor</h2>
-              <ChevronDown className="w-5 h-5 text-[#8b5cf6]" />
-            </div>
-            <div className="flex gap-2">
-              <button
-                onClick={() => navigate('/vendors/new')}
-                className="w-8 h-8 rounded-full bg-black flex items-center justify-center text-white hover:bg-gray-800 transition-colors"
-              >
-                <Plus className="w-4 h-4" />
-              </button>
-              <button className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-black hover:bg-gray-200 transition-colors">
-                <MoreHorizontal className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
 
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="Search vendor, product or item..."
-              className="w-full pl-8 pr-3 py-2 text-[12px] bg-gray-100 border border-transparent rounded-md focus:bg-white focus:border-blue-500 focus:outline-none"
-            />
-            <Search className="w-3.5 h-3.5 text-gray-400 absolute left-3 top-2.5" />
-          </div>
-        </div>
+    const {
+        vendorId
+    } = useParams();
 
-        <div className="flex-1 overflow-y-auto px-3 pb-3 hide-scrollbar">
-          {/* Vendor List Item (Active) */}
-          <div className="bg-gradient-to-br from-[#ffede1] via-[#fae8f8] to-[#efdfff] rounded-2xl px-3 py-2 cursor-pointer hover:shadow-md transition-all shadow-sm border border-transparent mb-2.5">
-            <div className="flex justify-between items-center mb-0.5">
-              <span className="text-[12px] font-medium text-[#374151]">VEND-00287</span>
-              <span className="text-[9px] text-gray-400 font-medium tracking-wide">25/06/2026</span>
-            </div>
-            <h3 className="text-[11px] font-bold text-[#111827] mb-1 uppercase leading-snug truncate">
-              Century Pulp & Paper
-            </h3>
-            <div className="text-right">
-              <span className="text-[14px] font-bold text-[#111827]">₹45,000.00</span>
-            </div>
-          </div>
 
-          {/* Vendor List Item 2 (Inactive) */}
-          <div className="bg-white rounded-2xl px-3 py-2 cursor-pointer hover:shadow-md hover:bg-gradient-to-br hover:from-[#ffede1] hover:via-[#fae8f8] hover:to-[#efdfff] hover:border-transparent transition-all shadow-sm border border-gray-100 mb-2.5">
-            <div className="flex justify-between items-center mb-0.5">
-              <span className="text-[12px] font-medium text-[#374151]">VEND-00288</span>
-              <span className="text-[9px] text-gray-400 font-medium tracking-wide">20/06/2026</span>
-            </div>
-            <h3 className="text-[11px] font-bold text-[#111827] mb-1 uppercase leading-snug truncate">
-              Global Supplies Inc
-            </h3>
-            <div className="text-right">
-              <span className="text-[14px] font-bold text-[#111827]">₹12,500.00</span>
-            </div>
-          </div>
+    // =================================================
+    // SIDEBAR VENDOR LIST
+    // =================================================
 
-          {/* Vendor List Item 3 (Inactive) */}
-          <div className="bg-white rounded-2xl px-3 py-2 cursor-pointer hover:shadow-md hover:bg-gradient-to-br hover:from-[#ffede1] hover:via-[#fae8f8] hover:to-[#efdfff] hover:border-transparent transition-all shadow-sm border border-gray-100 mb-2.5">
-            <div className="flex justify-between items-center mb-0.5">
-              <span className="text-[12px] font-medium text-[#374151]">VEND-00289</span>
-              <span className="text-[9px] text-gray-400 font-medium tracking-wide">15/06/2026</span>
-            </div>
-            <h3 className="text-[11px] font-bold text-[#111827] mb-1 uppercase leading-snug truncate">
-              TechHardware Ltd
-            </h3>
-            <div className="text-right">
-              <span className="text-[14px] font-bold text-[#111827]">₹0.00</span>
-            </div>
-          </div>
-        </div>
-      </div>
+    const [
+        vendors,
+        setVendors
+    ] = useState([]);
 
-      {/* ── Right Area (Details) ── */}
-      <div className="flex-1 min-w-0 flex flex-col h-full overflow-hidden bg-transparent">
 
-        {/* Top Header Card */}
-        <div className="bg-white shrink-0 border border-gray-100 rounded-[20px] shadow-sm mb-1">
-          <div className="px-3 lg:px-4 p-3">
+    const [
+        vendorSearch,
+        setVendorSearch
+    ] = useState('');
 
-            {/* Header */}
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-5">
-                <div className="w-12 h-12 rounded-[14px] bg-gradient-to-br from-[#ff3b30] to-[#b82db8] flex items-center justify-center text-white text-[18px] font-bold shadow-sm shrink-0">
-                  CP
+
+    const [
+        loadingVendors,
+        setLoadingVendors
+    ] = useState(false);
+
+
+    // =================================================
+    // ACTIVE TAB
+    // =================================================
+
+    const [
+        activeTab,
+        setActiveTab
+    ] = useState('Overview');
+
+
+    // =================================================
+    // VENDOR
+    // =================================================
+
+    const [
+        vendor,
+        setVendor
+    ] = useState(null);
+
+
+    // =================================================
+    // SUMMARY
+    // =================================================
+
+    const [
+        summary,
+        setSummary
+    ] = useState(null);
+
+
+    // =================================================
+    // OVERVIEW DATA
+    // =================================================
+
+    const [
+        addresses,
+        setAddresses
+    ] = useState({
+        billing: null,
+        shipping: null
+    });
+
+
+    const [
+        contacts,
+        setContacts
+    ] = useState([]);
+
+
+    const [
+        bankDetails,
+        setBankDetails
+    ] = useState([]);
+
+
+    // =================================================
+    // COMMERCIAL TERMS
+    // =================================================
+
+    const [
+        commercialTerms,
+        setCommercialTerms
+    ] = useState(null);
+
+
+    // =================================================
+    // REEL SPECIFICATIONS
+    // =================================================
+
+    const [
+        reelSpecifications,
+        setReelSpecifications
+    ] = useState([]);
+
+
+    // =================================================
+    // PURCHASE ORDER HISTORY
+    // =================================================
+
+    const [
+        purchaseOrderHistory,
+        setPurchaseOrderHistory
+    ] = useState([]);
+
+
+    const [
+        purchaseOrderPagination,
+        setPurchaseOrderPagination
+    ] = useState(null);
+
+
+    const [
+        purchaseOrderSearch,
+        setPurchaseOrderSearch
+    ] = useState('');
+
+
+    // =================================================
+    // LOADING
+    // =================================================
+
+    const [
+        loadingVendor,
+        setLoadingVendor
+    ] = useState(true);
+
+
+    const [
+        loadingTab,
+        setLoadingTab
+    ] = useState(false);
+
+
+    const [
+        error,
+        setError
+    ] = useState(null);
+
+
+    // =================================================
+    // LOAD VENDOR LIST FOR SIDEBAR
+    // =================================================
+
+    useEffect(() => {
+
+        const loadVendors =
+            async () => {
+
+                try {
+
+                    setLoadingVendors(
+                        true
+                    );
+
+
+                    const result =
+                        await getVendors({
+                            page: 1,
+                            limit: 50,
+                            search: vendorSearch
+                        });
+
+
+                    const data =
+                        result.data || [];
+
+
+                    const vendorRows =
+                        Array.isArray(data)
+                            ? data
+                            : (
+                                data.vendors ||
+                                data.rows ||
+                                []
+                            );
+
+
+                    setVendors(
+                        vendorRows
+                    );
+
+                } catch (err) {
+
+                    console.error(
+                        'Vendor list error:',
+                        err
+                    );
+
+                } finally {
+
+                    setLoadingVendors(
+                        false
+                    );
+                }
+            };
+
+
+        loadVendors();
+
+    }, [
+        vendorSearch
+    ]);
+
+
+    // =================================================
+    // LOAD VENDOR DETAILS
+    // =================================================
+
+    useEffect(() => {
+
+        if (!vendorId) {
+
+            console.log(
+                'No vendorId found'
+            );
+
+            return;
+        }
+
+
+        const loadVendor =
+            async () => {
+
+                try {
+
+                    setLoadingVendor(
+                        true
+                    );
+
+                    setError(null);
+
+
+                    const result =
+                        await getVendorDetails(
+                            vendorId
+                        );
+
+
+                    const data =
+                        result.data || {};
+
+
+                    /*
+                    * =====================================================
+                    * EXTRACT VENDOR MASTER
+                    * =====================================================
+                    *
+                    * The Vendor API may return the vendor master inside
+                    * `data.vendor`.
+                    *
+                    * Example:
+                    *
+                    * {
+                    *     vendor: {
+                    *         vendorId: 22,
+                    *         vendorCode: "VEND-000008",
+                    *         vendorType: "Regular",
+                    *         displayName: "Tiwari Pvt Ltd",
+                    *         ...
+                    *     },
+                    *     summary: {},
+                    *     addresses: [],
+                    *     contacts: [],
+                    *     banks: []
+                    * }
+                    *
+                    * If the backend returns the vendor fields directly,
+                    * `data` itself is used.
+                    */
+
+                    const vendorData =
+                        data.vendor || data;
+
+
+                    /*
+                    * Normalize ONLY the vendor master object.
+                    */
+
+                    setVendor(
+                        normalizeVendor(
+                            vendorData
+                        )
+                    );
+
+
+                    /*
+                    * Summary remains at the response level.
+                    */
+
+                    setSummary(
+                        normalizeSummary(
+                            data.summary
+                        )
+                    );
+
+
+                    setAddresses(
+                        normalizeAddresses(
+                            data.addresses
+                        )
+                    );
+
+
+                    setContacts(
+                        normalizeContacts(
+                            data.contacts
+                        )
+                    );
+
+
+                    setBankDetails(
+                        normalizeBanks(
+                            data.banks
+                        )
+                    );
+
+
+                    setReelSpecifications(
+                        Array.isArray(
+                            data.reel_specifications
+                        )
+                            ? data.reel_specifications
+                            : []
+                    );
+
+
+                    setPurchaseOrderHistory(
+                        Array.isArray(
+                            data.order_history
+                        )
+                            ? data.order_history
+                            : []
+                    );
+
+
+                    /*
+                     * Commercial terms are currently stored
+                     * directly on the Vendor master record.
+                     */
+                    setCommercialTerms(
+                        buildCommercialTerms(
+                            data
+                        )
+                    );
+
+
+                    /*
+                     * The current backend order-history endpoint
+                     * does not return pagination. We still keep
+                     * the state so the component remains compatible
+                     * if server-side pagination is introduced later.
+                     */
+                    setPurchaseOrderPagination(
+                        null
+                    );
+
+                } catch (err) {
+
+                    console.error(
+                        'Vendor details error:',
+                        err
+                    );
+
+
+                    setError(
+                        err.message ||
+                        'Failed to load vendor details'
+                    );
+
+                } finally {
+
+                    setLoadingVendor(
+                        false
+                    );
+                }
+            };
+
+
+        loadVendor();
+
+    }, [
+        vendorId
+    ]);
+
+
+    // =================================================
+    // LOAD TAB DATA
+    // =================================================
+    //
+    // Reel specification and PO history are already returned
+    // by getVendorDetails(). The tab loader therefore only
+    // refreshes those collections when a tab is opened.
+    //
+    // This preserves the Customer page's lazy-tab structure
+    // without requiring unsupported backend endpoints.
+
+    useEffect(() => {
+
+        if (
+            !vendorId ||
+            activeTab === 'Overview' ||
+            activeTab === 'Commercial Terms'
+        ) {
+
+            return;
+        }
+
+
+        const loadTab =
+            async () => {
+
+                try {
+
+                    setLoadingTab(
+                        true
+                    );
+
+
+                    // =========================================
+                    // REEL SPECIFICATIONS
+                    // =========================================
+
+                    if (
+                        activeTab === 'Reel Specifications'
+                    ) {
+
+                        const result =
+                            await getVendorReelSpecifications(
+                                vendorId
+                            );
+
+
+                        setReelSpecifications(
+                            result.data || []
+                        );
+                    }
+
+
+                    // =========================================
+                    // PURCHASE ORDER HISTORY
+                    // =========================================
+
+                    if (
+                        activeTab === 'Purchase Order History'
+                    ) {
+
+                        await loadPurchaseOrders(
+                            purchaseOrderSearch
+                        );
+                    }
+
+                } catch (err) {
+
+                    console.error(
+                        'Vendor tab data error:',
+                        err
+                    );
+
+
+                    setError(
+                        err.message ||
+                        'Failed to load vendor tab data'
+                    );
+
+                } finally {
+
+                    setLoadingTab(
+                        false
+                    );
+                }
+            };
+
+
+        loadTab();
+
+    }, [
+        activeTab,
+        vendorId
+    ]);
+
+
+    // =================================================
+    // PURCHASE ORDER HISTORY API
+    // =================================================
+
+    const loadPurchaseOrders =
+        async (
+            search = ''
+        ) => {
+
+            try {
+
+                setLoadingTab(
+                    true
+                );
+
+
+                const result =
+                    await getVendorOrderHistory(
+                        vendorId,
+                        {
+                            search
+                        }
+                    );
+
+
+                setPurchaseOrderHistory(
+                    result.data || []
+                );
+
+
+                /*
+                 * Current backend does not provide pagination.
+                 * Keep null instead of inventing page totals.
+                 */
+                setPurchaseOrderPagination(
+                    result.pagination || null
+                );
+
+            } catch (err) {
+
+                console.error(
+                    'Purchase order history error:',
+                    err
+                );
+
+
+                setError(
+                    err.message ||
+                    'Failed to load purchase order history'
+                );
+
+            } finally {
+
+                setLoadingTab(
+                    false
+                );
+            }
+        };
+
+
+    // =================================================
+    // PURCHASE ORDER SEARCH
+    // =================================================
+
+    const handlePurchaseOrderSearch =
+        (search) => {
+
+            setPurchaseOrderSearch(
+                search
+            );
+
+
+            loadPurchaseOrders(
+                search
+            );
+        };
+
+
+    // =================================================
+    // PURCHASE ORDER PAGE
+    // =================================================
+
+    const handlePurchaseOrderPageChange =
+        (page) => {
+
+            /*
+             * The current Vendor backend does not expose
+             * server-side pagination, so this handler is
+             * intentionally guarded.
+             */
+            if (
+                purchaseOrderPagination &&
+                purchaseOrderPagination.page
+            ) {
+
+                loadPurchaseOrders(
+                    purchaseOrderSearch
+                );
+            }
+        };
+
+
+    // =================================================
+    // LOADING SCREEN
+    // =================================================
+
+    if (loadingVendor) {
+
+        return (
+
+            <div className="flex h-full items-center justify-center bg-[#f4f7f9]">
+
+                <div className="text-[13px] text-gray-500">
+                    Loading vendor details...
                 </div>
-                <div>
-                  <div className="flex items-center gap-3">
-                    <h1 className="text-[18px] font-bold text-[#1a233a]">Century Pulp & Paper</h1>
-                    <span className="text-[12px] text-gray-400 font-medium">VEND-00287</span>
-                  </div>
-                  <div className="text-[11.5px] text-gray-500 mt-1 font-medium">
-                    Paper Mill · Kraft Liner & Fluting Medium · Vendor Since 08-Jan-2021 · Owner: P. Verma (Purchase)
-                  </div>
-                </div>
-              </div>
-              <span className="px-3 py-1 bg-[#e0f2fe] text-[#0284c7] text-[11px] font-bold rounded-full">Approved</span>
+
             </div>
+        );
+    }
 
-            {/* Divider */}
-            <div className="h-[1px] bg-gray-100 my-5"></div>
 
-            {/* Stat Cards */}
-            <div className="flex gap-3 overflow-x-auto pb-2 hide-scrollbar">
-              <div className="bg-[#f8fafc] rounded-[10px] p-3 min-w-[120px] border border-gray-100 flex-1">
-                <div className="text-[10px] text-gray-500 font-semibold mb-1 truncate">Total Purchase Value</div>
-                <div className="text-[18px] font-bold text-[#1a233a]">₹8.94 <span className="text-[11px] font-bold text-gray-500">Cr</span></div>
-                <div className="text-[9.5px] text-gray-400 mt-1 font-medium truncate">Since Mar 2021</div>
-              </div>
-              <div className="bg-[#f8fafc] rounded-[10px] p-3 min-w-[120px] border border-gray-100 flex-1">
-                <div className="text-[10px] text-gray-500 font-semibold mb-1 truncate">Within Terms</div>
-                <div className="text-[18px] font-bold text-[#1a233a]">₹32.6 <span className="text-[11px] font-bold text-gray-500">L</span></div>
-                <div className="text-[9.5px] text-gray-400 mt-1 font-medium truncate">Within Terms</div>
-              </div>
-              <div className="bg-[#f8fafc] rounded-[10px] p-3 min-w-[120px] border border-gray-100 flex-1">
-                <div className="text-[10px] text-gray-500 font-semibold mb-1 truncate">Payment Terms</div>
-                <div className="text-[18px] font-bold text-[#1a233a]">30 <span className="text-[11px] font-bold text-gray-500">Days</span></div>
-                <div className="text-[9.5px] text-gray-400 mt-1 font-medium truncate">Post GRN</div>
-              </div>
-              <div className="bg-[#f8fafc] rounded-[10px] p-3 min-w-[120px] border border-gray-100 flex-1">
-                <div className="text-[10px] text-gray-500 font-semibold mb-1 truncate">On-Time Delivery</div>
-                <div className="text-[18px] font-bold text-[#16a34a]">96.2%</div>
-                <div className="text-[9.5px] text-gray-400 mt-1 font-medium truncate">Last 12 Months</div>
-              </div>
-              <div className="bg-[#f8fafc] rounded-[10px] p-3 min-w-[120px] border border-gray-100 flex-1">
-                <div className="text-[10px] text-gray-500 font-semibold mb-1 truncate">QC Rejection Rate</div>
-                <div className="text-[18px] font-bold text-[#1a233a]">0.8%</div>
-                <div className="text-[9.5px] text-gray-400 mt-1 font-medium truncate">Inward Inspection</div>
-              </div>
+    // =================================================
+    // ERROR SCREEN
+    // =================================================
+
+    if (error && !vendor) {
+
+        return (
+
+            <div className="flex h-full items-center justify-center bg-[#f4f7f9]">
+
+                <div className="text-[13px] text-red-500">
+                    {error}
+                </div>
+
             </div>
-          </div>
-        </div>
-
-        {/* Bottom Content Card */}
-        <div className="bg-white flex-1 flex flex-col overflow-hidden border border-gray-100 rounded-[20px] shadow-sm">
-          {/* Tabs */}
-          <div className="flex gap-6 px-3 lg:px-4 pt-3 shrink-0 border-b border-gray-100">
-            {['Overview', 'Commercial Terms', 'Box Specification', 'Order History'].map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`relative pb-3 text-[13px] transition-colors ${activeTab === tab
-                    ? 'font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#ff3b30] via-[#b82db8] to-[#5a67d8]'
-                    : 'font-semibold text-gray-500 hover:text-gray-700'
-                  }`}
-              >
-                {tab}
-                {activeTab === tab && (
-                  <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-[#ff3b30] via-[#b82db8] to-[#5a67d8]"></div>
-                )}
-              </button>
-            ))}
-          </div>
+        );
+    }
 
 
-          {/* Scrollable Tab Content Area */}
-          <div className="flex-1 overflow-y-auto p-3 lg:p-4 bg-[#f8fafc] rounded-b-[20px]">
-            {/* Tab Content - Overview */}
-            {activeTab === 'Overview' && (
-              <div className="space-y-6">
+    // =================================================
+    // VENDOR NOT FOUND
+    // =================================================
 
-                <div className="bg-white rounded-[12px] p-2.5 shadow-sm border border-gray-100">
-                <div className="space-y-4">
+    if (!vendor) {
 
-                <div className="flex justify-end">
-                  <button className="p-1.5 border border-gray-100 rounded-md bg-white hover:bg-gray-50 text-gray-400 transition-colors shadow-sm">
-                    <Edit className="w-4 h-4" />
-                  </button>
+        return (
+
+            <div className="flex h-full items-center justify-center bg-[#f4f7f9]">
+
+                <div className="text-[13px] text-gray-500">
+                    Vendor not found.
                 </div>
 
-                {/* ── Top Row: Profile & Payment ── */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            </div>
+        );
+    }
 
-                  {/* Vendor Profile Card */}
-                  <div className="bg-white rounded-[12px] border border-gray-100 shadow-sm p-5 relative">
-                    <div className="border-b border-gray-100 pb-3 mb-4">
-                      <h3 className="text-[16px] font-medium text-[#1a233a]">Customer Profile</h3>
-                    </div>
 
-                    <div className="flex items-center gap-4 mb-5">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#ff3b30] to-[#b82db8] flex items-center justify-center text-white text-[15px] font-bold shadow-sm shrink-0">
-                        CP
-                      </div>
-                      <div>
-                        <h4 className="text-[14px] font-bold text-[#1a233a] leading-tight">Century Pulp & Paper</h4>
-                        <span className="text-[11px] text-gray-400 font-medium">VEND- 00001</span>
-                      </div>
-                    </div>
+    return (
 
-                    <div className="space-y-2.5">
-                      <div className="grid grid-cols-[120px_1fr] items-center text-[13px]">
-                        <span className="text-gray-400 font-medium">Vendor Type</span>
-                        <span className="font-bold text-[#1a233a]">Key Accounts</span>
-                      </div>
-                      <div className="grid grid-cols-[120px_1fr] items-center text-[13px]">
-                        <span className="text-gray-400 font-medium">PAN</span>
-                        <span className="font-bold text-[#1a233a]">AABCC1235H</span>
-                      </div>
-                      <div className="grid grid-cols-[120px_1fr] items-center text-[13px]">
-                        <span className="text-gray-400 font-medium">GSTIN</span>
-                        <span className="font-bold text-[#1a233a]">29BGBBB2222B2Z2</span>
-                      </div>
-                      <div className="grid grid-cols-[120px_1fr] items-center text-[13px]">
-                        <span className="text-gray-400 font-medium">MSME Register</span>
-                        <span className="font-bold text-[#1a233a]">No</span>
-                      </div>
-                    </div>
-                  </div>
+        <div className="flex-1 min-h-0 overflow-hidden bg-[#f4f7f9] p-1.5">
 
-                  {/* Payment Details Card */}
-                  <div className="bg-white rounded-[12px] border border-gray-100 shadow-sm p-5 relative">
-                    <div className="border-b border-gray-100 pb-3 mb-4">
-                      <h3 className="text-[16px] font-medium text-[#1a233a]">Payment Details</h3>
-                    </div>
+            <div className="flex h-full gap-1.5">
 
-                    <div className="space-y-3 mt-[44px]">
-                      <div className="grid grid-cols-[140px_1fr] items-center text-[13px]">
-                        <span className="text-gray-400 font-medium">Currency</span>
-                        <span className="font-bold text-[#1a233a]">INR - Indian Rupee</span>
-                      </div>
-                      <div className="grid grid-cols-[140px_1fr] items-center text-[13px]">
-                        <span className="text-gray-400 font-medium">Opening Balance</span>
-                        <span className="font-bold text-[#1a233a]">₹0.00</span>
-                      </div>
-                      <div className="grid grid-cols-[140px_1fr] items-center text-[13px]">
-                        <span className="text-gray-400 font-medium">Payment Terms</span>
-                        <span className="font-bold text-[#1a233a]">Net 30</span>
-                      </div>
-                    </div>
-                  </div>
+                {/* =================================================
+                    LEFT SIDEBAR
+                ================================================= */}
 
-                </div>
+                <div className="w-[280px] shrink-0 bg-white border border-gray-100 rounded-[20px] shadow-sm overflow-hidden flex flex-col">
 
-                {/* ── Addresses Card ── */}
-                <div className="bg-white rounded-[12px] border border-blue-50 shadow-sm p-5">
-                  <div className="grid grid-cols-1 md:grid-cols-2 relative gap-0">
-                    {/* Left: Billing Address */}
-                    <div className="pr-6 border-r-2 border-pink-300">
-                      <div className="flex justify-between items-center mb-2">
-                        <h3 className="text-[14px] font-bold text-gray-500">Billing Address</h3>
-                      </div>
-                      <div className="text-[12px] font-bold text-[#4b5563] leading-snug">
-                        Century Pulp & Paper Mill<br />
-                        Gate No. 2, Administrative Office Lalkuan Industrial Area<br />
-                        Lalkuan Nainital District Uttarakhand 43552
-                      </div>
-                    </div>
+                    {/* -----------------------------------------
+                        Sidebar Header
+                    ----------------------------------------- */}
 
-                    {/* Right: Shipping Address */}
-                    <div className="pl-6">
-                      <div className="flex justify-between items-center mb-2">
-                        <h3 className="text-[14px] font-bold text-gray-500">Shipping Address</h3>
-                      </div>
-                      <div className="text-[12px] font-bold text-[#4b5563] leading-snug">
-                        Century Pulp & Paper Mill<br />
-                        Century House, Lalkuan Industrial Complex<br />
-                        NH-109, Lalkuan Nainital District<br />
-                        Uttarakhand 262402
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                    <div className="px-4 py-3 border-b border-gray-100">
 
-                </div>
-              </div>
+                        <div className="flex items-center justify-between">
 
-                {/* Contacts Directory */}
-                <div className="bg-white rounded-[12px] border border-blue-50 shadow-sm p-5">
-                  <div className="flex justify-between items-center mb-2">
-                    <h3 className="text-[16px] font-bold text-[#1a233a]">Contacts Directory</h3>
-                  </div>
-                  <div className="flex flex-col divide-y divide-gray-100">
-                    {[1, 2, 3].map((item, idx) => (
-                      <div key={idx} className="flex items-center justify-between py-2.5 hover:bg-gray-50/50 transition-colors">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-[12px] font-bold text-gray-600">
-                            SK
-                          </div>
-                          <div>
-                            <div className="text-[13px] font-bold text-[#1a233a]">Suresh Kulkarni</div>
-                            <div className="text-[11px] text-gray-400 mt-0.5">Purchase Manager • Purchase</div>
-                          </div>
+                            <div className="flex items-center space-x-1">
+
+                                <h2 className="text-xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-[#ff7a59] via-[#d54a88] to-[#402de8]">
+                                    All Vendor
+                                </h2>
+
+                                <ChevronDown className="w-5 h-5 text-[#8b5cf6]" />
+
+                            </div>
+
+
+                            <button
+                                type="button"
+                                onClick={() =>
+                                    navigate(
+                                        '/vendors/new'
+                                    )
+                                }
+                                className="w-8 h-8 bg-gradient-to-r from-[#ff7a59] via-[#d54a88] to-[#402de8] text-white rounded-full flex items-center justify-center shadow-sm"
+                                title="Add Vendor"
+                            >
+                                <Plus className="w-4 h-4" />
+                            </button>
+
                         </div>
-                        <div className="flex items-center gap-3">
-                          <div className="flex items-center gap-1.5 text-gray-500 text-[10px] font-medium bg-gray-50 px-2.5 py-1 rounded-full border border-gray-100 shadow-sm">
-                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                            </svg>
-                            +91 98220 44102
-                          </div>
-                          <div className="flex items-center gap-1.5 text-gray-500 text-[10px] font-medium bg-gray-50 px-2.5 py-1 rounded-full border border-gray-100 shadow-sm">
-                            <Mail className="w-3 h-3" />
-                            s.kulkarni@veenafoods.in
-                          </div>
+
+
+                        {/* -----------------------------------------
+                            Search
+                        ----------------------------------------- */}
+
+                        <div className="relative mt-3">
+
+                            <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+
+                            <input
+                                type="text"
+                                value={vendorSearch}
+                                onChange={(e) =>
+                                    setVendorSearch(
+                                        e.target.value
+                                    )
+                                }
+                                placeholder="Search vendor..."
+                                className="w-full pl-9 pr-3 py-2 bg-gray-50 border border-gray-100 rounded-lg text-[11px] outline-none focus:border-[#b82db8]"
+                            />
+
                         </div>
-                      </div>
-                    ))}
-                  </div>
+
+                    </div>
+
+
+                    {/* -----------------------------------------
+                        Vendor List
+                    ----------------------------------------- */}
+
+                    <div className="flex-1 overflow-y-auto p-2">
+
+                        {loadingVendors ? (
+
+                            <div className="py-8 text-center text-[11px] text-gray-400">
+                                Loading vendors...
+                            </div>
+
+                        ) : vendors.length === 0 ? (
+
+                            <div className="py-8 text-center text-[11px] text-gray-400">
+                                No vendors found.
+                            </div>
+
+                        ) : (
+
+                            vendors.map(
+                                item => {
+
+                                    const itemId =
+                                        item.vendorId ||
+                                        item.vendor_id;
+
+                                    const isSelected =
+                                        String(itemId) ===
+                                        String(vendorId);
+
+
+                                    return (
+
+                                        <button
+                                            key={itemId}
+                                            type="button"
+                                            onClick={() =>
+                                                navigate(
+                                                    `/vendors/${itemId}`
+                                                )
+                                            }
+                                            className={`
+                                                w-full text-left rounded-[14px] border p-3 mb-2 transition-all
+                                                ${
+                                                    isSelected
+                                                        ? 'bg-gradient-to-br from-[#fff7f3] via-[#faf1fb] to-[#f3efff] border-[#ead8f4]'
+                                                        : 'bg-white border-gray-100 hover:bg-gray-50'
+                                                }
+                                            `}
+                                        >
+
+                                            {/* Vendor Code + Date */}
+
+                                            <div className="flex justify-between items-center mb-0.5">
+
+                                                <span className="text-[12px] font-medium text-[#374151]">
+                                                    {
+                                                        item.vendorCode ||
+                                                        item.vendor_code ||
+                                                        '-'
+                                                    }
+                                                </span>
+
+                                                <span className="text-[9px] text-gray-400 font-medium tracking-wide">
+                                                    {formatDate(
+                                                        item.createdAt ||
+                                                        item.created_at
+                                                    )}
+                                                </span>
+
+                                            </div>
+
+
+                                            {/* Vendor Name */}
+
+                                            <h3 className="text-[11px] font-bold text-[#111827] mb-1 uppercase leading-snug truncate">
+                                                {
+                                                    item.displayName ||
+                                                    item.display_name ||
+                                                    '-'
+                                                }
+                                            </h3>
+
+
+                                            {/* Payable */}
+
+                                            <div className="text-right">
+
+                                                <span className="text-[14px] font-bold text-[#111827]">
+                                                    {formatCurrency(
+                                                        item.accountsPayable ??
+                                                        item.accounts_payable ??
+                                                        item.openingBalance ??
+                                                        item.opening_balance ??
+                                                        0
+                                                    )}
+                                                </span>
+
+                                            </div>
+
+                                        </button>
+                                    );
+                                }
+                            )
+
+                        )}
+
+                    </div>
+
                 </div>
 
-                {/* Bank Details */}
-                <div className="bg-white rounded-[12px] border border-blue-50 shadow-sm p-5">
-                  <div className="flex justify-between items-center mb-3">
-                    <h3 className="text-[16px] font-bold text-[#1a233a]">Bank Details</h3>
-                  </div>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-[12px] text-left">
-                      <thead>
-                        <tr className="text-gray-500 font-medium border-b border-gray-100">
-                          <th className="pb-2 px-2">Bank Name</th>
-                          <th className="pb-2 px-2">Account Holder Name</th>
-                          <th className="pb-2 px-2">Account No</th>
-                          <th className="pb-2 px-2">IFSC Code</th>
-                          <th className="pb-2 px-2">Open Date</th>
-                        </tr>
-                      </thead>
-                      <tbody className="text-[#1a233a]">
-                        <tr className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
-                          <td className="py-2.5 px-2 font-medium">HDFC Bank</td>
-                          <td className="py-2.5 px-2 text-gray-600">Climamex Private Limited</td>
-                          <td className="py-2.5 px-2 font-medium">123456789012</td>
-                          <td className="py-2.5 px-2 text-gray-600">HDFC0000123</td>
-                          <td className="py-2.5 px-2 text-gray-600">01-Jul-2026</td>
-                        </tr>
-                        <tr className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
-                          <td className="py-2.5 px-2 font-medium">IDFC Bank</td>
-                          <td className="py-2.5 px-2 text-gray-600">Niman Private Limited</td>
-                          <td className="py-2.5 px-2 font-medium">123456789012</td>
-                          <td className="py-2.5 px-2 text-gray-600">IDFC0000223</td>
-                          <td className="py-2.5 px-2 text-gray-600">07-Jul-2026</td>
-                        </tr>
-                        <tr className="hover:bg-gray-50 transition-colors">
-                          <td className="py-2.5 px-2 font-medium">ICICI Bank</td>
-                          <td className="py-2.5 px-2 text-gray-600">Godrej Private Limited</td>
-                          <td className="py-2.5 px-2 font-medium">123456789012</td>
-                          <td className="py-2.5 px-2 text-gray-600">ICICI0000333</td>
-                          <td className="py-2.5 px-2 text-gray-600">12-Jul-2026</td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
 
-              </div>
-            )}
+                {/* =================================================
+                    RIGHT AREA
+                ================================================= */}
 
-            {/* Tab Content - Commercial Terms */}
-            {activeTab === 'Commercial Terms' && (
-              <div className="space-y-3">
+                <div className="flex-1 min-w-0 flex flex-col h-full overflow-hidden bg-transparent">
 
-                {/* Payment Terms */}
-                <div className="bg-white border border-blue-50 rounded-[12px] p-5 shadow-sm">
-                  <h3 className="text-[16px] font-bold text-[#1a233a] mb-4">Payment Terms</h3>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="bg-[#f7fbff] border border-blue-100 rounded-[8px] p-4 flex flex-col justify-center">
-                      <div className="text-[12px] text-gray-800 font-medium mb-1">Payment Terms</div>
-                      <div className="text-[16px] font-medium text-black">30 Days Post GRN</div>
-                    </div>
-                    <div className="bg-[#f7fbff] border border-blue-100 rounded-[8px] p-4 flex flex-col justify-center">
-                      <div className="text-[12px] text-gray-800 font-medium mb-1">Advance Required</div>
-                      <div className="text-[16px] font-medium text-black">None</div>
-                    </div>
-                    <div className="bg-[#f7fbff] border border-blue-100 rounded-[8px] p-4 flex flex-col justify-center">
-                      <div className="text-[12px] text-gray-800 font-medium mb-1">payable Outstanding</div>
-                      <div className="text-[16px] font-medium text-black">₹32,60,000</div>
-                    </div>
-                    <div className="bg-[#f7fbff] border border-blue-100 rounded-[8px] p-4 flex flex-col justify-center">
-                      <div className="text-[12px] text-gray-800 font-medium mb-1">Overdue Status</div>
-                      <div>
-                        <span className="inline-flex px-2 py-0.5 bg-[#e0f5e7] text-[#16a34a] text-[11px] font-medium rounded-full mt-0.5">
-                          No Overdue
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                    {/* -----------------------------------------
+                        HEADER
+                    ----------------------------------------- */}
 
-                {/* Rate Contract */}
-                <div className="bg-white border border-blue-50 rounded-[12px] p-5 shadow-sm">
-                  <h3 className="text-[16px] font-bold text-[#1a233a] mb-4">Rate Contract</h3>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="bg-[#f7fbff] border border-blue-100 rounded-[8px] p-4 flex flex-col justify-center">
-                      <div className="text-[12px] text-gray-800 font-medium mb-1">Contract Reference</div>
-                      <div className="text-[16px] font-medium text-black">RC-CP-2026-Q3</div>
-                    </div>
-                    <div className="bg-[#f7fbff] border border-blue-100 rounded-[8px] p-4 flex flex-col justify-center">
-                      <div className="text-[12px] text-gray-800 font-medium mb-1">Valid Till</div>
-                      <div className="text-[16px] font-medium text-black">30-Sep-2026</div>
-                    </div>
-                    <div className="bg-[#f7fbff] border border-blue-100 rounded-[8px] p-4 flex flex-col justify-center">
-                      <div className="text-[12px] text-gray-800 font-medium mb-1">Price Basic</div>
-                      <div className="text-[16px] font-medium text-black">Per Kg, Ex-Mill</div>
-                    </div>
-                    <div className="bg-[#f7fbff] border border-blue-100 rounded-[8px] p-4 flex flex-col justify-center">
-                      <div className="text-[12px] text-gray-800 font-medium mb-1">Escalation Clause</div>
-                      <div className="text-[14px] font-medium text-black leading-snug">Quarterly review linked to pulp index</div>
-                    </div>
-                  </div>
-                </div>
+                    <VendorHeader
+                        vendor={vendor}
+                    />
 
-                {/* Recent Payment Activity */}
-                <div className="bg-white border border-blue-50 rounded-[12px] p-5 shadow-sm">
-                  <h3 className="text-[16px] font-bold text-[#1a233a] mb-5">Recent Payment Activity</h3>
-                  <div className="space-y-2.5">
-                    
-                    {/* Header Row */}
-                    <div className="grid grid-cols-4 items-center bg-white border border-gray-100 rounded-[8px] px-6 py-1.5 text-[12px] text-gray-400 font-medium">
-                      <div>Bill No.</div>
-                      <div>Amount</div>
-                      <div>Due Date</div>
-                      <div>Status</div>
-                    </div>
 
-                    {/* Data Rows */}
-                    <div className="grid grid-cols-4 items-center bg-white border border-gray-100 rounded-[8px] px-6 py-1.5 text-[12px] text-[#1a233a] font-medium hover:border-gray-200 hover:shadow-sm transition-all cursor-pointer">
-                      <div>CP-BILL-4421</div>
-                      <div>₹6,20,000</div>
-                      <div>05-Aug-2026</div>
-                      <div>
-                        <span className="inline-flex px-3 py-1 bg-[#fbe8c7] text-[#92400e] text-[10px] font-medium rounded-full">Pending</span>
-                      </div>
-                    </div>
+                    {/* -----------------------------------------
+                        SUMMARY
+                    ----------------------------------------- */}
 
-                    <div className="grid grid-cols-4 items-center bg-white border border-gray-100 rounded-[8px] px-6 py-1.5 text-[12px] text-[#1a233a] font-medium hover:border-gray-200 hover:shadow-sm transition-all cursor-pointer">
-                      <div>CP-BILL-4390</div>
-                      <div>₹4,10,000</div>
-                      <div>18-Jul-2026</div>
-                      <div>
-                        <span className="inline-flex px-3 py-1 bg-[#dcfce7] text-[#16a34a] text-[10px] font-medium rounded-full">Paid</span>
-                      </div>
-                    </div>
+                    <VendorSummary
+                        summary={summary}
+                        currencyCode={
+                            vendor?.currency ||
+                            'INR'
+                        }
+                    />
 
-                    <div className="grid grid-cols-4 items-center bg-white border border-gray-100 rounded-[8px] px-6 py-1.5 text-[12px] text-[#1a233a] font-medium hover:border-gray-200 hover:shadow-sm transition-all cursor-pointer">
-                      <div>CP-BILL-6490</div>
-                      <div>₹8,10,000</div>
-                      <div>02-Jul-2026</div>
-                      <div>
-                        <span className="inline-flex px-3 py-1 bg-[#dcfce7] text-[#16a34a] text-[10px] font-medium rounded-full">Paid</span>
-                      </div>
-                    </div>
 
-                  </div>
-                </div>
-              </div>
-            )}
+                    {/* =================================================
+                        MAIN CONTENT
+                    ================================================= */}
 
-            {/* Tab Content - Box Specification */}
-            {activeTab === 'Box Specification' && (
-              <div className="space-y-6">
-                <h3 className="text-[16px] font-bold text-[#1a233a]">Material Supplied (3)</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {/* Card 1 */}
-                  <div className="bg-white border border-gray-200 rounded-[12px] p-3 shadow-sm flex flex-col hover:border-[#ea580c] hover:shadow-md transition-all cursor-pointer">
-                    <div className="flex justify-between items-start mb-1">
-                      <h4 className="text-[14px] font-bold text-[#1a233a]">Kraft Liner 150 GSM</h4>
-                      <span className="inline-flex px-2 py-0.5 bg-[#dcfce7] text-[#16a34a] text-[10px] font-medium rounded-full">Approved</span>
-                    </div>
-                    <div className="text-[11px] text-gray-400 mb-1.5">RM-PAP-1150</div>
-                    
-                    <div className="text-[12px] text-[#1a233a] font-medium mb-2 leading-relaxed">
-                      GSM Range: 140-160<br/>
-                      Reel Width: 900-1250mm
-                    </div>
-                    
-                    <div className="mt-auto">
-                      <div className="flex justify-between items-center mb-1.5">
-                        <span className="text-[11px] text-gray-500 font-medium">Quality Score</span>
-                        <span className="text-[11px] font-bold text-[#1a233a]">96%</span>
-                      </div>
-                      <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
-                        <div className="h-full bg-[#16a34a] rounded-full" style={{ width: '96%' }}></div>
-                      </div>
-                    </div>
-                  </div>
+                    <div className="bg-white flex-1 flex flex-col overflow-hidden border border-gray-100 rounded-[20px] shadow-sm">
 
-                  {/* Card 2 */}
-                  <div className="bg-white border border-gray-200 rounded-[12px] p-3 shadow-sm flex flex-col hover:border-[#ea580c] hover:shadow-md transition-all cursor-pointer">
-                    <div className="flex justify-between items-start mb-1">
-                      <h4 className="text-[14px] font-bold text-[#1a233a]">Fluting Medium 120 GSM</h4>
-                      <span className="inline-flex px-2 py-0.5 bg-[#dcfce7] text-[#16a34a] text-[10px] font-medium rounded-full">Approved</span>
-                    </div>
-                    <div className="text-[11px] text-gray-400 mb-1.5">RM-PAP-1120</div>
-                    
-                    <div className="text-[12px] text-[#1a233a] font-medium mb-2 leading-relaxed">
-                      GSM Range: 100-140<br/>
-                      Reel Width: 900-1250mm
-                    </div>
-                    
-                    <div className="mt-auto">
-                      <div className="flex justify-between items-center mb-1.5">
-                        <span className="text-[11px] text-gray-500 font-medium">Quality Score</span>
-                        <span className="text-[11px] font-bold text-[#1a233a]">96%</span>
-                      </div>
-                      <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
-                        <div className="h-full bg-[#16a34a] rounded-full" style={{ width: '96%' }}></div>
-                      </div>
-                    </div>
-                  </div>
+                        {/* =============================================
+                            TABS
+                        ============================================= */}
 
-                  {/* Card 3 */}
-                  <div className="bg-white border border-gray-200 rounded-[12px] p-3 shadow-sm flex flex-col hover:border-[#ea580c] hover:shadow-md transition-all cursor-pointer">
-                    <div className="flex justify-between items-start mb-1">
-                      <h4 className="text-[14px] font-bold text-[#1a233a] pr-2">Test Linear 100 GSM<br/>(Recycled)</h4>
-                      <span className="inline-flex px-2 py-0.5 bg-[#ffedd5] text-[#d97706] text-[10px] font-medium rounded-full whitespace-nowrap shrink-0">Under Evaluation</span>
+                        <div className="flex gap-6 px-3 lg:px-4 pt-3 shrink-0 border-b border-gray-100">
+
+                            {[
+                                'Overview',
+                                'Commercial Terms',
+                                'Reel Specifications',
+                                'Purchase Order History'
+                            ].map(tab => (
+
+                                <button
+                                    key={tab}
+                                    type="button"
+                                    onClick={() =>
+                                        setActiveTab(
+                                            tab
+                                        )
+                                    }
+                                    className={`
+                                        relative pb-3 text-[13px] transition-colors
+                                        ${
+                                            activeTab === tab
+                                                ? 'font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#ff3b30] via-[#b82db8] to-[#5a67d8]'
+                                                : 'font-semibold text-gray-500 hover:text-gray-700'
+                                        }
+                                    `}
+                                >
+
+                                    {tab}
+
+
+                                    {activeTab === tab && (
+
+                                        <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-[#ff3b30] via-[#b82db8] to-[#5a67d8]"></div>
+
+                                    )}
+
+                                </button>
+                            ))}
+
+                        </div>
+
+
+                        {/* =============================================
+                            TAB CONTENT
+                        ============================================= */}
+
+                        <div className="flex-1 overflow-y-auto p-3 lg:p-4 bg-[#f8fafc] rounded-b-[20px]">
+
+                            {/* =========================================
+                                OVERVIEW
+                            ========================================= */}
+
+                            {activeTab === 'Overview' && (
+
+                                <VendorOverview
+                                    vendor={vendor}
+                                    billingAddress={
+                                        addresses.billing
+                                    }
+                                    shippingAddress={
+                                        addresses.shipping
+                                    }
+                                    contacts={contacts}
+                                    bankDetails={bankDetails}
+                                    onEdit={() =>
+                                        console.log(
+                                            'Edit vendor:',
+                                            vendorId
+                                        )
+                                    }
+                                />
+
+                            )}
+
+
+                            {/* =========================================
+                                COMMERCIAL TERMS
+                            ========================================= */}
+
+                            {activeTab === 'Commercial Terms' && (
+
+                                loadingTab &&
+                                !commercialTerms
+                                    ? (
+                                        <LoadingTab />
+                                    )
+                                    : (
+                                        <VendorCommercialTerms
+                                            commercialTerms={
+                                                commercialTerms
+                                            }
+                                        />
+                                    )
+
+                            )}
+
+
+                            {/* =========================================
+                                REEL SPECIFICATIONS
+                            ========================================= */}
+
+                            {activeTab === 'Reel Specifications' && (
+
+                                loadingTab &&
+                                reelSpecifications.length === 0
+                                    ? (
+                                        <LoadingTab />
+                                    )
+                                    : (
+                                        <ReelSpecifications
+                                            specifications={
+                                                reelSpecifications
+                                            }
+                                        />
+                                    )
+
+                            )}
+
+
+                            {/* =========================================
+                                PURCHASE ORDER HISTORY
+                            ========================================= */}
+
+                            {activeTab === 'Purchase Order History' && (
+
+                                loadingTab &&
+                                purchaseOrderHistory.length === 0
+                                    ? (
+                                        <LoadingTab />
+                                    )
+                                    : (
+                                        <PurchaseOrderHistory
+                                            orders={
+                                                purchaseOrderHistory
+                                            }
+                                            pagination={
+                                                purchaseOrderPagination
+                                            }
+                                            onPageChange={
+                                                handlePurchaseOrderPageChange
+                                            }
+                                            onSearch={
+                                                handlePurchaseOrderSearch
+                                            }
+                                        />
+                                    )
+
+                            )}
+
+                        </div>
+
                     </div>
-                    <div className="text-[11px] text-gray-400 mb-1.5">RM-PAP-1120</div>
-                    
-                    <div className="text-[12px] text-[#1a233a] font-medium mb-2 leading-relaxed">
-                      GSM Range: 100-140<br/>
-                      Reel Width: 900-1250mm
-                    </div>
-                    
-                    <div className="mt-auto">
-                      <div className="flex justify-between items-center mb-1.5">
-                        <span className="text-[11px] text-gray-500 font-medium">Quality Score</span>
-                        <span className="text-[11px] font-bold text-[#1a233a]">78%</span>
-                      </div>
-                      <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
-                        <div className="h-full bg-[#d97706] rounded-full" style={{ width: '78%' }}></div>
-                      </div>
-                    </div>
-                  </div>
 
                 </div>
-              </div>
-            )}
 
-
-            {/* Tab Content - Order History */}
-            {activeTab === 'Order History' && (
-              <div className="space-y-6">
-                <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-                  <div className="flex items-center justify-between p-4 lg:p-5 border-b border-gray-100">
-                    <h3 className="text-[16px] font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#ff3b30] to-[#5a67d8]">Order History</h3>
-                    <div className="flex items-center gap-2">
-                      <button className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 rounded-md text-[11px] font-medium text-gray-600 hover:bg-gray-50 transition-colors">
-                        <Calendar className="w-3.5 h-3.5 text-gray-400" />
-                        Select Date Range
-                      </button>
-                      <button className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 rounded-md text-[11px] font-medium text-gray-600 hover:bg-gray-50 transition-colors">
-                        <Download className="w-3.5 h-3.5 text-gray-400" />
-                        Export
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-[12px] whitespace-nowrap">
-                      <thead>
-                        <tr className="border-b border-gray-200 text-gray-500 font-bold uppercase text-[10px]">
-                          <th className="py-3 pl-4 lg:pl-5 pr-3">PO No.</th>
-                          <th className="py-3 px-3">Date</th>
-                          <th className="py-3 px-3">Material</th>
-                          <th className="py-3 px-3">Quantity</th>
-                          <th className="py-3 px-3">Value</th>
-                          <th className="py-3 px-3">Delivery Status</th>
-                          <th className="py-3 pr-4 lg:pr-5 pl-3">QC Status</th>
-                        </tr>
-                      </thead>
-                      <tbody className="text-[#1a233a]">
-                        <tr className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                          <td className="py-3 pl-4 lg:pl-5 pr-3 font-medium">PO-2026-2210</td>
-                          <td className="py-3 px-3 font-medium text-gray-600">20-Jul-2026</td>
-                          <td className="py-3 px-3 font-medium text-gray-700">Kraft Liner 150 GSM</td>
-                          <td className="py-3 px-3 font-bold">8.4 T</td>
-                          <td className="py-3 px-3 font-medium">₹4,45,000</td>
-                          <td className="py-3 px-3">
-                            <span className="inline-flex px-3 py-1 bg-[#dcfce7] text-[#16a34a] text-[10px] font-bold rounded-full">Received</span>
-                          </td>
-                          <td className="py-3 pr-4 lg:pr-5 pl-3">
-                            <span className="inline-flex px-3 py-1 bg-[#dcfce7] text-[#16a34a] text-[10px] font-bold rounded-full">Passed</span>
-                          </td>
-                        </tr>
-
-                        <tr className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                          <td className="py-3 pl-4 lg:pl-5 pr-3 font-medium">PO-2026-2175</td>
-                          <td className="py-3 px-3 font-medium text-gray-600">15-Jul-2026</td>
-                          <td className="py-3 px-3 font-medium text-gray-700">Fluting Medium 120 GSM</td>
-                          <td className="py-3 px-3 font-bold">6.1 T</td>
-                          <td className="py-3 px-3 font-medium">₹2,50,000</td>
-                          <td className="py-3 px-3">
-                            <span className="inline-flex px-3 py-1 bg-[#dcfce7] text-[#16a34a] text-[10px] font-bold rounded-full">Received</span>
-                          </td>
-                          <td className="py-3 pr-4 lg:pr-5 pl-3">
-                            <span className="inline-flex px-3 py-1 bg-[#dcfce7] text-[#16a34a] text-[10px] font-bold rounded-full">Passed</span>
-                          </td>
-                        </tr>
-
-                        <tr className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                          <td className="py-3 pl-4 lg:pl-5 pr-3 font-medium">PO-2026-2140</td>
-                          <td className="py-3 px-3 font-medium text-gray-600">02-Jul-2026</td>
-                          <td className="py-3 px-3 font-medium text-gray-700">Kraft Linear 150 GSM</td>
-                          <td className="py-3 px-3 font-bold">10.2 T</td>
-                          <td className="py-3 px-3 font-medium">₹5,40,000</td>
-                          <td className="py-3 px-3">
-                            <span className="inline-flex px-3 py-1 bg-[#dcfce7] text-[#16a34a] text-[10px] font-bold rounded-full">Received</span>
-                          </td>
-                          <td className="py-3 pr-4 lg:pr-5 pl-3">
-                            <span className="inline-flex px-3 py-1 bg-[#ffedd5] text-[#d97706] text-[10px] font-bold rounded-full">Minor Deviation</span>
-                          </td>
-                        </tr>
-
-                        <tr className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                          <td className="py-3 pl-4 lg:pl-5 pr-3 font-medium">PO-2026-2098</td>
-                          <td className="py-3 px-3 font-medium text-gray-600">18-Jun-2026</td>
-                          <td className="py-3 px-3 font-medium text-gray-700">Test Linear 100 GSM</td>
-                          <td className="py-3 px-3 font-bold">4.0 T</td>
-                          <td className="py-3 px-3 font-medium">₹1,60,000</td>
-                          <td className="py-3 px-3">
-                            <span className="inline-flex px-3 py-1 bg-[#dcfce7] text-[#16a34a] text-[10px] font-bold rounded-full">Received</span>
-                          </td>
-                          <td className="py-3 pr-4 lg:pr-5 pl-3">
-                            <span className="inline-flex px-3 py-1 bg-[#fee2e2] text-[#ef4444] text-[10px] font-bold rounded-full">Rejected - Moisture</span>
-                          </td>
-                        </tr>
-
-                        <tr className="hover:bg-gray-50 transition-colors">
-                          <td className="py-3 pl-4 lg:pl-5 pr-3 font-medium">PO-2026-2044</td>
-                          <td className="py-3 px-3 font-medium text-gray-600">29-May-2026</td>
-                          <td className="py-3 px-3 font-medium text-gray-700">Kraft Liner 150 GSM</td>
-                          <td className="py-3 px-3 font-bold">9.6 T</td>
-                          <td className="py-3 px-3 font-medium">₹5,08,000</td>
-                          <td className="py-3 px-3">
-                            <span className="inline-flex px-3 py-1 bg-[#dcfce7] text-[#16a34a] text-[10px] font-bold rounded-full">Received</span>
-                          </td>
-                          <td className="py-3 pr-4 lg:pr-5 pl-3">
-                            <span className="inline-flex px-3 py-1 bg-[#dcfce7] text-[#16a34a] text-[10px] font-bold rounded-full">Passed</span>
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </div>
-            )}
-
-          </div>
-        </div>
-      </div>
-
-      {/* Box Specification Modal */}
-      {selectedBox && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-[2px] p-4">
-          <div className="bg-white rounded-[20px] shadow-2xl w-full max-w-[550px] overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200">
-            {/* Modal Header */}
-            <div className="flex justify-between items-start p-6 pb-4">
-              <div>
-                <h2 className="text-[18px] font-bold text-[#1a233a] mb-1">{selectedBox.name}</h2>
-                <div className="text-[11px] text-gray-400">{selectedBox.code}</div>
-              </div>
-              <button onClick={() => setSelectedBox(null)} className="text-gray-400 hover:text-gray-800 transition-colors p-1 rounded-full hover:bg-gray-100">
-                <X className="w-5 h-5" />
-              </button>
             </div>
-            
-            {/* Modal Content */}
-            <div className="p-6 pt-5 flex gap-8">
-              {/* Left Column */}
-              <div className="flex-1 space-y-6 border-r border-gray-100 pr-8">
-                <div>
-                  <div className="text-[10px] text-gray-400 font-medium mb-1 uppercase tracking-wider">Box Size (L×W×H)</div>
-                  <div className="text-[13px] text-[#1a233a] font-medium">{selectedBox.size}</div>
-                </div>
-                <div>
-                  <div className="text-[10px] text-gray-400 font-medium mb-1 uppercase tracking-wider">Ply</div>
-                  <div className="text-[13px] text-[#1a233a] font-medium">{selectedBox.ply}</div>
-                </div>
-                <div>
-                  <div className="text-[10px] text-gray-400 font-medium mb-1 uppercase tracking-wider">Die Number</div>
-                  <div className="text-[13px] text-[#1a233a] font-medium">{selectedBox.dieNumber}</div>
-                </div>
-                <div>
-                  <div className="text-[10px] text-gray-400 font-medium mb-1 uppercase tracking-wider">ECT Requirement</div>
-                  <div className="text-[13px] text-[#1a233a] font-medium">{selectedBox.ect}</div>
-                </div>
-              </div>
-              
-              {/* Right Column */}
-              <div className="flex-1 space-y-6 pl-2">
-                <div>
-                  <div className="text-[10px] text-gray-400 font-medium mb-1 uppercase tracking-wider">Flute Type</div>
-                  <div className="text-[13px] text-[#1a233a] font-medium">{selectedBox.flute}</div>
-                </div>
-                <div>
-                  <div className="text-[10px] text-gray-400 font-medium mb-1 uppercase tracking-wider">GSM Combo</div>
-                  <div className="text-[13px] text-[#1a233a] font-medium">{selectedBox.gsm}</div>
-                </div>
-                <div>
-                  <div className="text-[10px] text-gray-400 font-medium mb-1 uppercase tracking-wider">Print Colors</div>
-                  <div className="text-[13px] text-[#1a233a] font-medium">{selectedBox.print}</div>
-                </div>
-                <div>
-                  <div className="text-[10px] text-gray-400 font-medium mb-1 uppercase tracking-wider">Status</div>
-                  <div className="text-[12.5px] leading-snug">
-                    <span className={selectedBox.status === 'Under Review' ? "text-[#ea580c] font-medium" : "text-[#16a34a] font-medium"}>{selectedBox.status}</span> <span className="text-gray-500">{selectedBox.statusMessage}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+
         </div>
-      )}
-    </div>
-  );
+    );
 };
+
+
+// =====================================================
+// NORMALIZE VENDOR
+// =====================================================
+//
+// Converts the Vendor API response into the exact
+// camelCase structure expected by the Vendor components.
+//
+// IMPORTANT:
+// Backend getVendorById() returns:
+//
+//   vendorId
+//   vendorCode
+//   vendorType
+//   primaryContactPrefix
+//   primaryContactFirstName
+//   primaryContactLastName
+//   displayName
+//   companyName
+//   vendorLanguage
+//   email
+//   primaryPhone
+//   secondaryPhone
+//   pan
+//   gstin
+//   msme
+//   currencyCode
+//   openingBalance
+//   accountsPayable
+//   paymentTerms
+//   advanceRequired
+//   status
+//
+// The UI should consume these exact names.
+// =====================================================
+
+function normalizeVendor(data = {}) {
+
+    return {
+
+        ...data,
+
+        // -------------------------------------------------
+        // IDENTITY
+        // -------------------------------------------------
+
+        vendorId:
+            data.vendorId ??
+            data.vendor_id,
+
+        vendorCode:
+            data.vendorCode ??
+            data.vendor_code,
+
+        vendorType:
+            data.vendorType ??
+            data.vendor_type,
+
+        displayName:
+            data.displayName ??
+            data.display_name,
+
+        companyName:
+            data.companyName ??
+            data.company_name,
+
+        vendorLanguage:
+            data.vendorLanguage ??
+            data.vendor_language,
+
+
+        // -------------------------------------------------
+        // PRIMARY CONTACT
+        // -------------------------------------------------
+
+        primaryContactPrefix:
+            data.primaryContactPrefix ??
+            data.primarySalutation ??
+            data.primary_salutation,
+
+        primaryContactFirstName:
+            data.primaryContactFirstName ??
+            data.primaryFirstName ??
+            data.primary_first_name,
+
+        primaryContactLastName:
+            data.primaryContactLastName ??
+            data.primaryLastName ??
+            data.primary_last_name,
+
+
+        // -------------------------------------------------
+        // CONTACT INFORMATION
+        // -------------------------------------------------
+
+        email:
+            data.email ??
+            data.emailAddress,
+
+        primaryPhone:
+            data.primaryPhone ??
+            data.primaryNumber ??
+            data.primary_number,
+
+        secondaryPhone:
+            data.secondaryPhone ??
+            data.secondaryNumber ??
+            data.secondary_number,
+
+
+        // -------------------------------------------------
+        // TAX / REGISTRATION
+        // -------------------------------------------------
+
+        pan:
+            data.pan,
+
+        gstin:
+            data.gstin,
+
+        msme:
+            data.msme,
+
+
+        // -------------------------------------------------
+        // COMMERCIAL
+        // -------------------------------------------------
+
+        currencyCode:
+            data.currencyCode ??
+            data.currency ??
+            data.currency_code,
+
+        // Keep currency as an alias because
+        // some existing Vendor components use it.
+        currency:
+            data.currency ??
+            data.currencyCode ??
+            data.currency_code,
+
+        openingBalance:
+            data.openingBalance ??
+            data.opening_balance ??
+            0,
+
+        accountsPayable:
+            data.accountsPayable ??
+            data.accounts_payable ??
+            0,
+
+        paymentTerms:
+            data.paymentTerms ??
+            data.payment_terms,
+
+        advanceRequired:
+            data.advanceRequired ??
+            data.advance_required,
+
+
+        // -------------------------------------------------
+        // STATUS / AUDIT
+        // -------------------------------------------------
+
+        status:
+            data.status,
+
+        createdAt:
+            data.createdAt ??
+            data.created_at,
+
+        updatedAt:
+            data.updatedAt ??
+            data.updated_at
+    };
+}
+
+
+// =====================================================
+// NORMALIZE SUMMARY
+// =====================================================
+//
+// Backend returns:
+//
+//   lifetimeOrders
+//   lifetimeValue
+//   outstandingBalance
+//   activeOrders
+//   onTimeDeliveryPercentage
+//
+// VendorSummary.jsx consumes the same names.
+// =====================================================
+
+function normalizeSummary(summary = {}) {
+
+    return {
+
+        lifetimeOrders:
+            summary.lifetimeOrders ??
+            summary.totalOrders ??
+            summary.total_orders ??
+            0,
+
+        lifetimeValue:
+            summary.lifetimeValue ??
+            summary.totalPurchaseValue ??
+            summary.total_purchase_value ??
+            0,
+
+        outstandingBalance:
+            summary.outstandingBalance ??
+            summary.outstandingValue ??
+            summary.outstanding_value ??
+            0,
+
+        activeOrders:
+            summary.activeOrders ??
+            summary.active_orders ??
+            0,
+
+        onTimeDeliveryPercentage:
+            summary.onTimeDeliveryPercentage ??
+            summary.onTimeDelivery ??
+            summary.on_time_delivery ??
+            0
+    };
+}
+
+// =====================================================
+// NORMALIZE ADDRESSES
+// =====================================================
+//
+// Backend may return addresses in either of these forms:
+//
+// 1. OBJECT FORMAT
+//
+// {
+//     billing: {...},
+//     shipping: {...}
+// }
+//
+// 2. ARRAY FORMAT
+//
+// [
+//     {...},
+//     {...}
+// ]
+//
+// The VendorOverview component expects:
+//
+// {
+//     billing: {...},
+//     shipping: {...}
+// }
+//
+// Therefore this function normalizes both formats into
+// the same frontend structure.
+// =====================================================
+
+function normalizeAddresses(
+    addressData = {}
+) {
+
+    // =================================================
+    // STEP 1
+    // HANDLE OBJECT RESPONSE
+    // =================================================
+    //
+    // Current backend response:
+    //
+    //     {
+    //         addresses: {
+    //             billing: {...},
+    //             shipping: {...}
+    //         }
+    //     }
+    //
+    // =================================================
+
+    if (
+        addressData &&
+        !Array.isArray(addressData) &&
+        typeof addressData === 'object'
+    ) {
+
+        const normalizeAddress =
+            (address = null) => {
+
+                if (!address) {
+                    return null;
+                }
+
+                return {
+
+                    addressId:
+                        address.addressId ??
+                        address.address_id,
+
+                    vendorId:
+                        address.vendorId ??
+                        address.vendor_id,
+
+                    addressType:
+                        address.addressType ??
+                        address.address_type,
+
+                    contactName:
+                        address.contactName ??
+                        address.attention ??
+                        address.contact_name,
+
+                    addressLine1:
+                        address.addressLine1 ??
+                        address.street1 ??
+                        address.address_line1,
+
+                    addressLine2:
+                        address.addressLine2 ??
+                        address.street2 ??
+                        address.address_line2,
+
+                    city:
+                        address.city,
+
+                    state:
+                        address.state,
+
+                    country:
+                        address.country,
+
+                    pincode:
+                        address.pincode ??
+                        address.zipCode ??
+                        address.zip_code,
+
+                    phone:
+                        address.phone,
+
+                    fax:
+                        address.fax,
+
+                    createdAt:
+                        address.createdAt ??
+                        address.created_at
+                };
+            };
+
+
+        return {
+
+            billing:
+                normalizeAddress(
+                    addressData.billing
+                ),
+
+            shipping:
+                normalizeAddress(
+                    addressData.shipping
+                )
+        };
+    }
+
+
+    // =================================================
+    // STEP 2
+    // HANDLE ARRAY RESPONSE
+    // =================================================
+    //
+    // This keeps the function compatible with an API
+    // response such as:
+    //
+    // [
+    //     {
+    //         addressType: "Billing",
+    //         ...
+    //     },
+    //     {
+    //         addressType: "Shipping",
+    //         ...
+    //     }
+    // ]
+    //
+    // =================================================
+
+    if (Array.isArray(addressData)) {
+
+        const normalized =
+            addressData.map(address => ({
+
+                addressId:
+                    address.addressId ??
+                    address.address_id,
+
+                vendorId:
+                    address.vendorId ??
+                    address.vendor_id,
+
+                addressType:
+                    address.addressType ??
+                    address.address_type,
+
+                contactName:
+                    address.contactName ??
+                    address.attention ??
+                    address.contact_name,
+
+                addressLine1:
+                    address.addressLine1 ??
+                    address.street1 ??
+                    address.address_line1,
+
+                addressLine2:
+                    address.addressLine2 ??
+                    address.street2 ??
+                    address.address_line2,
+
+                city:
+                    address.city,
+
+                state:
+                    address.state,
+
+                country:
+                    address.country,
+
+                pincode:
+                    address.pincode ??
+                    address.zipCode ??
+                    address.zip_code,
+
+                phone:
+                    address.phone,
+
+                fax:
+                    address.fax,
+
+                createdAt:
+                    address.createdAt ??
+                    address.created_at
+
+            }));
+
+
+        return {
+
+            billing:
+                normalized.find(
+                    address =>
+                        String(
+                            address.addressType || ''
+                        ).toLowerCase() ===
+                        'billing'
+                ) || null,
+
+            shipping:
+                normalized.find(
+                    address =>
+                        String(
+                            address.addressType || ''
+                        ).toLowerCase() ===
+                        'shipping'
+                ) || null
+        };
+    }
+
+
+    // =================================================
+    // STEP 3
+    // NO ADDRESS DATA
+    // =================================================
+
+    return {
+        billing: null,
+        shipping: null
+    };
+}
+
+// =====================================================
+// NORMALIZE CONTACTS
+// =====================================================
+
+function normalizeContacts(
+    rows = []
+) {
+
+    return (
+        Array.isArray(rows)
+            ? rows
+            : []
+    ).map(contact => ({
+
+        contactId:
+            contact.contactId ??
+            contact.contact_id,
+
+        firstName:
+            contact.firstName ??
+            contact.first_name,
+
+        lastName:
+            contact.lastName ??
+            contact.last_name,
+
+        designation:
+            contact.designation,
+
+        department:
+            contact.department,
+
+        phone:
+            contact.phone ??
+            contact.mobileNumber,
+
+        email:
+            contact.email ??
+            contact.emailAddress,
+
+        isPrimary:
+            contact.isPrimary ??
+            contact.is_primary
+    }));
+}
+
+// =====================================================
+// NORMALIZE BANKS
+// =====================================================
+
+function normalizeBanks(
+    rows = []
+) {
+
+    return (
+        Array.isArray(rows)
+            ? rows
+            : []
+    ).map(bank => ({
+
+        bankId:
+            bank.bankId ??
+            bank.bank_id,
+
+        bankName:
+            bank.bankName ??
+            bank.bank_name,
+
+        accountHolderName:
+            bank.accountHolderName ??
+            bank.accountHolder ??
+            bank.account_holder_name,
+
+        accountNumber:
+            bank.accountNumber ??
+            bank.account_number,
+
+        ifscCode:
+            bank.ifscCode ??
+            bank.ifsc_code,
+
+        openDate:
+            bank.openDate ??
+            bank.open_date,
+
+        isPrimary:
+            bank.isPrimary ??
+            bank.is_primary
+    }));
+}
+
+
+// =====================================================
+// COMMERCIAL TERMS BUILDER
+// =====================================================
+
+function buildCommercialTerms(data = {}) {
+
+    const currencyCode =
+        data.currencyCode ??
+        data.currency ??
+        data.currency_code ??
+        'INR';
+
+    return {
+
+        currencyCode,
+
+        // Keep currency for backward compatibility
+        // with any existing component.
+        currency: currencyCode,
+
+        openingBalance:
+            data.openingBalance ??
+            data.opening_balance ??
+            0,
+
+        accountsPayable:
+            data.accountsPayable ??
+            data.accounts_payable ??
+            0,
+
+        paymentTerms:
+            data.paymentTerms ??
+            data.payment_terms,
+
+        advanceRequired:
+            data.advanceRequired ??
+            data.advance_required
+    };
+}
+
+
+// =====================================================
+// COMMON HELPERS
+// =====================================================
+
+function formatCurrency(
+    value
+) {
+
+    return `₹${Number(
+        value || 0
+    ).toLocaleString('en-IN')}`;
+}
+
+
+function formatDate(
+    value
+) {
+
+    if (!value) {
+        return '-';
+    }
+
+
+    const date =
+        new Date(value);
+
+
+    if (
+        Number.isNaN(
+            date.getTime()
+        )
+    ) {
+
+        return value;
+    }
+
+
+    return date.toLocaleDateString(
+        'en-GB',
+        {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric'
+        }
+    );
+}
+
+
+// =====================================================
+// LOADING TAB
+// =====================================================
+
+const LoadingTab = () => {
+
+    return (
+
+        <div className="bg-white rounded-[12px] border border-gray-100 p-10 text-center">
+
+            <div className="text-[12px] text-gray-400">
+                Loading...
+            </div>
+
+        </div>
+    );
+};
+
 
 export default VendorDetailsPage;
